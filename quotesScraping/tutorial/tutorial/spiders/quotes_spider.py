@@ -4,6 +4,7 @@ import scrapy
 from scrapy.http import FormRequest
 
 from ..items import TutorialItem
+from urllib.parse import urljoin
 
 
 class QuotesSpider(scrapy.Spider):
@@ -40,7 +41,7 @@ class QuotesSpider(scrapy.Spider):
             text = text.replace('“', '')
             items['text'] = text
             items['author'] = author
-            items['author_link'] = author_link
+            items['author_link'] = urljoin("https://quotes.toscrape.com", author_link)
             items['tags'] = tags
 
             yield items
