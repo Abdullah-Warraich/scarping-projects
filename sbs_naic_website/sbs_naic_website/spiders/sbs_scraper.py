@@ -16,12 +16,12 @@ class SbsScraperSpider(scrapy.Spider):
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
                       '(KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
     }
-    licenseTypesUrl = "https://services.naic.org/api/licenseeLookup/summary/licenseTypes/{}/{}"
-    demographicsUrl = "https://services.naic.org/api/licenseeLookup/summary/demographics/{}?entityType=IND"
-    lookupPhoneEmailUrl = "https://services.naic.org/api/licenseeLookup/summary/lookupPhoneEmailWebsite/{}"
-    CeInfoUrl = "https://services.naic.org/api/licenseeLookup/summary/ceInfo/{}/{}"
-    appointmentsUrl = "https://services.naic.org/api/licenseeLookup/summary/appointments/{}/{}"
-    linesOfAuthorityUrl = "https://services.naic.org/api/licenseeLookup/summary/linesOfAuthority/{}"
+    license_types_url = "https://services.naic.org/api/licenseeLookup/summary/licenseTypes/{}/{}"
+    demographics_url = "https://services.naic.org/api/licenseeLookup/summary/demographics/{}?entityType=IND"
+    lookup_phone_email_url = "https://services.naic.org/api/licenseeLookup/summary/lookupPhoneEmailWebsite/{}"
+    ce_info_url = "https://services.naic.org/api/licenseeLookup/summary/ceInfo/{}/{}"
+    appointments_url = "https://services.naic.org/api/licenseeLookup/summary/appointments/{}/{}"
+    lines_of_authority_url = "https://services.naic.org/api/licenseeLookup/summary/linesOfAuthority/{}"
     details_link = "https://sbs.naic.org/solar-external-lookup/lookup/licensee/" \
                    "summary/{}?jurisdiction={}&entityType=IND&licenseType={}"
 
@@ -75,7 +75,7 @@ class SbsScraperSpider(scrapy.Spider):
                                                            record.get('licenseTypeCode', 'PRO'))
 
             yield scrapy.Request(
-                self.licenseTypesUrl.format(self.state, f"{record.get('licenseNumber', 0)}"),
+                self.license_types_url.format(self.state, record.get('licenseNumber', 0)),
                 method='GET',
                 headers=self.headers,
                 callback=self.license_types,
@@ -97,7 +97,7 @@ class SbsScraperSpider(scrapy.Spider):
             item['expirationDate'] = data[0].get('expirationDate', '')
 
             yield scrapy.Request(
-                self.demographicsUrl.format(f"{data[0].get('licenseId', 0)}"),
+                self.demographics_url.format(f"{data[0].get('licenseId', 0)}"),
                 method='GET',
                 headers=self.headers,
                 callback=self.info,
@@ -116,7 +116,7 @@ class SbsScraperSpider(scrapy.Spider):
         item['state'] = data.get('businessAddress', '').get('state', '')
 
         yield scrapy.Request(
-            self.lookupPhoneEmailUrl.format(f"{response.meta.get('licenseId', 0)}"),
+            self.lookup_phone_email_url.format(f"{response.meta.get('licenseId', 0)}"),
             method='GET',
             headers=self.headers,
             callback=self.contacts,
@@ -127,21 +127,13 @@ class SbsScraperSpider(scrapy.Spider):
     def contacts(self, response):
         data = response.json()
         item = response.meta.get('item')
-        nums = []
-        emails = []
-        urls = []
-        for i in data.get('phones', []):
-            nums.append(i['phoneNumber'])
-        item['phones'] = '/ '.join(nums)
-        for i in data.get('emails', []):
-            emails.append(i['emailAddress'])
-        item['emails'] = '/ '.join(emails)
-        for i in data.get('urls', []):
-            urls.append(i['urlAddress'])
-        item['urls'] = '/ '.join(urls)
+
+        item['phones'] = '/'.join([number['phoneNumber'] for number in data.get('phones', [])])
+        item['emails'] = '/'.join([email['emailAddress'] for email in data.get('emails', [])])
+        item['urlAddress'] = '/'.join([url['urlAddress'] for url in data.get('urls', [])])
 
         yield scrapy.Request(
-            self.CeInfoUrl.format(response.meta.get('businessAddress'), f"{response.meta.get('licenseId')}"),
+            self.ce_info_url.format(response.meta.get('businessAddress'), f"{response.meta.get('licenseId')}"),
             method='GET',
             headers=self.headers,
             callback=self.ceinfo,
@@ -159,7 +151,7 @@ class SbsScraperSpider(scrapy.Spider):
         item['compliantDesigOver25Years'] = data.get('desigOver25Years', '')
 
         yield scrapy.Request(
-            self.appointmentsUrl.format(response.meta.get('businessAddress'), f"{response.meta.get('licenseId')}"),
+            self.appointments_url.format(response.meta.get('businessAddress'), f"{response.meta.get('licenseId')}"),
             method='GET',
             headers=self.headers,
             callback=self.appointments,
@@ -182,7 +174,7 @@ class SbsScraperSpider(scrapy.Spider):
         item['appointmentDate'] = ','.join(appointment_date)
 
         yield scrapy.Request(
-            self.linesOfAuthorityUrl.format(f"{response.meta.get('licenseId')}"),
+            self.lines_of_authority_url.format(f"{response.meta.get('licenseId')}"),
             method='GET',
             headers=self.headers,
             callback=self.line_of_authority,
@@ -206,7 +198,7 @@ class SbsScraperSpider(scrapy.Spider):
             line_effective_date.append(i.get('effectiveDate', ''))
             line_expiration_date.append(i.get('expirationDate', ''))
 
-        item['lineType'] = ' / '.join(line_type)
+        item['lineType'] = ' | '.join(line_type)
         item['examCertDate'] = ' , '.join(exam_cert_date)
         item['lineStatus'] = ' / '.join(line_status)
         item['LineStatusDate'] = ' , '.join(line_status_date)
