@@ -97,7 +97,7 @@ class SbsScraperSpider(scrapy.Spider):
             item['expirationDate'] = data[0].get('expirationDate', '')
 
             yield scrapy.Request(
-                self.demographics_url.format(f"{data[0].get('licenseId', 0)}"),
+                self.demographics_url.format(data[0].get('licenseId', 0)),
                 method='GET',
                 headers=self.headers,
                 callback=self.info,
@@ -133,7 +133,7 @@ class SbsScraperSpider(scrapy.Spider):
         item['urlAddress'] = '/'.join([url['urlAddress'] for url in data.get('urls', [])])
 
         yield scrapy.Request(
-            self.ce_info_url.format(response.meta.get('businessAddress'), f"{response.meta.get('licenseId')}"),
+            self.ce_info_url.format(response.meta.get('businessAddress'), response.meta.get('licenseId')),
             method='GET',
             headers=self.headers,
             callback=self.ceinfo,
@@ -151,7 +151,7 @@ class SbsScraperSpider(scrapy.Spider):
         item['compliantDesigOver25Years'] = data.get('desigOver25Years', '')
 
         yield scrapy.Request(
-            self.appointments_url.format(response.meta.get('businessAddress'), f"{response.meta.get('licenseId')}"),
+            self.appointments_url.format(response.meta.get('businessAddress'), response.meta.get('licenseId')),
             method='GET',
             headers=self.headers,
             callback=self.appointments,
@@ -174,7 +174,7 @@ class SbsScraperSpider(scrapy.Spider):
         item['appointmentDate'] = ','.join(appointment_date)
 
         yield scrapy.Request(
-            self.lines_of_authority_url.format(f"{response.meta.get('licenseId')}"),
+            self.lines_of_authority_url.format(response.meta.get('licenseId')),
             method='GET',
             headers=self.headers,
             callback=self.line_of_authority,
