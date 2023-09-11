@@ -1,17 +1,18 @@
 import json
 from urllib.parse import urljoin
 import scrapy
+from scrapy import Selector
 
 
 class MyntraSpider(scrapy.Spider):
     headers = {
         'authority': 'www.myntra.com',
-        # 'accept-language': 'en-US,en;q=0.9',
-        # 'sec-ch-ua': '"Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"',
-        # 'sec-ch-ua-mobile': '?0',
-        # 'sec-ch-ua-platform': '"Windows"',
-        # 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-                      # '(KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36'
+        'accept-language': 'en-US,en;q=0.9',
+        'sec-ch-ua': '"Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Windows"',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                      '(KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36'
     }
     custom_settings = {
         # 'CONCURRENT_REQUESTS': 8,
@@ -22,6 +23,7 @@ class MyntraSpider(scrapy.Spider):
         'AUTOTHROTTLE_START_DELAY': 1.0,
         'AUTOTHROTTLE_TARGET_CONCURRENCY': 2.0,
         'FEED_FORMAT': 'csv',
+        ''
         'FEED_EXPORT_FIELDS': ['productId', 'productName', 'rating', 'ratingCount', 'discount', 'sizes',
                                'brand', 'price', 'gender', 'images', 'Product Details', 'MATERIAL & CARE',
                                'Body or Garment Size', 'Fabric', 'Fabric 2', 'Hemline','Length',
@@ -36,20 +38,16 @@ class MyntraSpider(scrapy.Spider):
     name = "myntra_spider"
     start_urls = ["https://www.myntra.com/"]
 
-    def parse(self, response):
-        men_columns = response.xpath("//div[@class = 'desktop-categoryContainer' and @data-group='men']")
-        women_columns = response.xpath("//div[@class = 'desktop-categoryContainer' and @data-group='women']")
-        kids_columns = response.xpath("//div[@class = 'desktop-categoryContainer' and @data-group='kids']")
+    def __init__(self, category=None, *args, **kwargs):
+        super(MyntraSpider, self).__init__(*args, **kwargs)
+        self.category = category
+        print(category)
 
-        women_relative_urls = [url for column in women_columns for url in column.xpath(".//li/ul/li/a[@class="
-                                                                                       "'desktop-categoryName']"
-                                                                                       "/@href").getall()]
-        men_relative_urls = [url for column in men_columns for url in column.xpath(".//li/ul/li/a[@class='desktop-"
-                                                                                   "categoryName']/@href").getall()]
-        kids_relative_urls = [url for column in kids_columns for url in column.xpath(".//li/ul/li/a[@class='desktop-"
-                                                                                     "categoryName']/@href").getall()]
-        relative_urls = men_relative_urls + women_relative_urls + kids_relative_urls
-        print(relative_urls)
+    def parse(self, response):
+        columns = response.xpath(f"//div[@class = 'desktop-categoryContainer' and @data-group={self.category}]")
+
+        relative_urls = [url for column in columns for url in column.xpath(".//li/ul/li/a[@class='desktop-"
+                                                                           "categoryName']/@href").getall()]
         for relative_url in relative_urls:
             yield scrapy.Request(
                 urljoin(self.start_urls[0], relative_url),
@@ -92,8 +90,10 @@ class MyntraSpider(scrapy.Spider):
         item = response.meta.get('item')
         json_data = json.loads(response.xpath('//script/text()').re_first('window.__myx = (.*)'))
         product_details = json_data.get('pdpData', '').get('productDetails', '')
+        # print(product_details)
         for i in product_details:
-            item[f"{i.get('title', '')}"] = i.get('description', '').replace('<br>', ',')
+            item[i.get('title', '')] = ', '.join(Selector(text=i.get('description', '')).css('::text').getall())
+
         product_attribute = json_data.get('pdpData', '').get('articleAttributes', '')
         item['Body or Garment Size'] = product_attribute.get('Body or Garment Size', '')
         item['Fabric'] = product_attribute.get('Fabric', '')
@@ -121,7 +121,6 @@ class MyntraSpider(scrapy.Spider):
         item['Technique'] = product_attribute.get('Technique', '')
         item['Weave Type'] = product_attribute.get('Weave Type', '')
         details = json_data.get('pdpData', '').get('productDetails', '')
-        if len(details) == 3:
-            item['SIZE & FIT'] = details[2].get('description', '')
-        item['specifications'] = str(json_data.get('pdpData', '').get('articleAttributes', '')).strip('{}')
+        # item['specifications'] = json_data.get('pdpData', '').get('articleAttributes', '').strip('{}')
+        item['specifications'] = ', '.join([f'{key}: {value}' for key, value in json_data.get('pdpData', '').get('articleAttributes', '').items()])
         yield item
