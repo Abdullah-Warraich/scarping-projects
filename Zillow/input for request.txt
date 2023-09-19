@@ -1,0 +1,5 @@
+searchQueryState: {"usersSearchTerm":"Washington, DC","mapBounds":{"west":-82.83732990624999,"east":-71.19182209374999,"south":36.591788525890586,"north":41.123297686143786},"mapZoom":6,"regionSelection":[{"regionId":41568,"regionType":6}],"isMapVisible":true,"filterState":{"isAllHomes":{"value":true},"sortSelection":{"value":"globalrelevanceex"}},"isListVisible":true,"pagination":{"currentPage":2}}
+wants: {"cat1":["listResults","mapResults"],"cat2":["total"]}
+requestId: 20
+
+{"west":-79.76259,"east":-71.777491,"south":40.477399,"north":45.015865}
