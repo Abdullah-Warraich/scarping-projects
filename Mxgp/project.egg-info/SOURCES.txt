@@ -1,0 +1,13 @@
+setup.py
+Mxgp/__init__.py
+Mxgp/items.py
+Mxgp/middlewares.py
+Mxgp/pipelines.py
+Mxgp/settings.py
+Mxgp/spiders/__init__.py
+Mxgp/spiders/mxgp.py
+project.egg-info/PKG-INFO
+project.egg-info/SOURCES.txt
+project.egg-info/dependency_links.txt
+project.egg-info/entry_points.txt
+project.egg-info/top_level.txt
